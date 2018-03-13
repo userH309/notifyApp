@@ -1,78 +1,64 @@
 import UIKit
 import UserNotifications
 
-class mainVC: UIViewController
-{
-    override func viewDidLoad()
-    {
+class mainVC: UIViewController {
+    override func viewDidLoad() {
         super.viewDidLoad()
-        
-        UNUserNotificationCenter.current().requestAuthorization(options: [.badge,.sound,.alert], completionHandler: //request permission
-        {(granted,error) in
-            if granted
-            {
+        //Request permission to recieve notifications.
+        UNUserNotificationCenter.current().requestAuthorization(options: [.badge,.sound,.alert], completionHandler: { (granted,error) in
+            if granted {
                 print("Notification access granted")
             }
-            else
-            {
-                print(error!.localizedDescription)
+            else {
+                print("Notication access denied")
             }
         })
     }
     
-    @IBAction func notifyButtonTapped(sender: UIButton)
-    {
-        scheduleNotification(inSeconds: 5)
-        {(success) in
-            if success
-            {
-                print("Successfully scheduled notification")
+    func scheduleNotification(inSeconds: TimeInterval, completion: @escaping (_ success:Bool) -> ()) {
+        //Store url for internal file if it exists.
+        guard let imageURL = Bundle.main.url(forResource: "IMG_0390", withExtension: "JPG")
+        else {
+            //Set completion to false and bounch out of the function.
+            completion(false)
+            return
+        }
+        var attachment:UNNotificationAttachment
+        //Try to validate the attachment which is our image, then store it.
+        attachment = try! UNNotificationAttachment(identifier: "myNotification", url: imageURL, options: .none)
+        let notif = UNMutableNotificationContent()
+        notif.categoryIdentifier = "myNotificationCategory"
+        notif.title = "Hey check this out!"
+        notif.subtitle = "We have ourselves a notification here."
+        notif.body = "Yes, well done you've read to this point, thats good!"
+        //Add our attachment to the notification.
+        notif.attachments = [attachment]
+        //Use the time passed in with parameter to set the interval.
+        let notifTriggerTime = UNTimeIntervalNotificationTrigger(timeInterval: inSeconds, repeats: false)
+        //Create the request.
+        let request = UNNotificationRequest(identifier: "myNotification", content: notif, trigger: notifTriggerTime)
+        //Schedule the notification for delivery.
+        UNUserNotificationCenter.current().add(request) { (error) in
+            if error != nil {
+                print(error as Any)
+                completion(false)
             }
-            else
-            {
-                print("Error scheduling notification")
+            else {
+                print(error as Any)
+                completion(true)
             }
         }
     }
     
-    func scheduleNotification(inSeconds: TimeInterval, completion: @escaping (_ success:Bool) -> ())
-    {
-        let myImage = "IMG_0390"
-        guard let imageURL = Bundle.main.url(forResource: myImage, withExtension: "JPG") //set completion to false and bounch out of the function if we can't find the image
-        else
-        {
-            completion(false)
-            return
-        }
-        
-        var attachment:UNNotificationAttachment
-        attachment = try! UNNotificationAttachment(identifier: "myNotification", url: imageURL, options: .none)
-        
-        let notif = UNMutableNotificationContent()
-        
-        //only for extension
-        notif.categoryIdentifier = "myNotificationCategory"
-        
-        notif.title = "New notification"
-        notif.subtitle = "These are great!"
-        notif.body = "The new notification options in iOS 10 are what I've always dreamed of!"
-        notif.attachments = [attachment]
-        
-        let notifTrigger = UNTimeIntervalNotificationTrigger(timeInterval: inSeconds, repeats: false)
-        
-        let request = UNNotificationRequest(identifier: "myNotification", content: notif, trigger: notifTrigger)
-        
-        UNUserNotificationCenter.current().add(request)
-        {error in
-            if error != nil
-            {
-                print(error as Any)
-                completion(false)
+    //Run when button is pushed.
+    @IBAction func notifyButtonTapped(sender: UIButton) {
+        //Run and pass in 5 seconds to the scheduleNotification function.
+        scheduleNotification(inSeconds: 5) { (success) in
+            if success {
+                print("Successfully scheduled notification")
             }
-            else
-            {
-                print(error as Any)
-                completion(true)
+            else {
+                print("Error scheduling notification")
             }
         }
     }
